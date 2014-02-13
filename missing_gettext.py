@@ -57,6 +57,7 @@ class MissingGettextChecker(BaseChecker):
     name = 'missing_gettext'
     msgs = {
         'W9903': ('non-gettext-ed string %r',
+                  'non-gettext-ed string',
                   "There is a raw string that's not passed through gettext"),
         }
 
