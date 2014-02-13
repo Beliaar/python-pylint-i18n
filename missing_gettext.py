@@ -76,9 +76,6 @@ class MissingGettextChecker(BaseChecker):
             # ignore empty strings
             lambda x : x == '',
 
-            # some strings we use 
-            lambda x: x in ['POST', 'agency', 'promoter', 'venue', 'utf-8'],
-
             # This string is probably used as a key or something, and should be ignored
             lambda x: len(x) > 3 and x.upper() == x,
 
@@ -126,42 +123,24 @@ class MissingGettextChecker(BaseChecker):
             # dict['shouldignore']
             (Index,   lambda curr_node, node: curr_node.value == node),
 
-            # list_display = [....]
-            # e.g. Django Admin class Meta:...
-            (Assign,  lambda curr_node, node: len(curr_node.targets) == 1 and hasattr(curr_node.targets[0], 'name') and curr_node.targets[0].name in ['list_display', 'js', 'css', 'fields', 'exclude', 'list_filter', 'list_display_links', 'ordering', 'search_fields', 'actions', 'unique_together', 'db_table', 'custom_filters', 'search_fields', 'custom_date_list_filters', 'export_fields', 'date_hierarchy' ]),
-
             # Just a random doc-string-esque string in the code
             (Discard, lambda curr_node, node: curr_node.value == node),
 
-            # X(attrs={'class': 'somecssclass', 'maxlength': '20'})
-            (Keyword, lambda curr_node, node: curr_node.arg == 'attrs' and hasattr(curr_node.value, 'items') and node in [x[1] for x in curr_node.value.items if x[0].value in ['class', 'maxlength', 'cols', 'rows', 'checked', 'disabled', 'readonly']]),
             # X(attrs=dict(....))
             (Keyword, lambda curr_node, node: curr_node.arg == 'attrs' and isinstance(curr_node.value, CallFunc) and hasattr(curr_node.value.func, 'name') and curr_node.value.func.name == 'dict' ),
-            # x = CharField(default='xxx', related_name='tickets') etc.
-            (Keyword, lambda curr_node, node: curr_node.arg in ['regex', 'prefix', 'css_class', 'mimetype', 'related_name', 'default', 'initial', 'upload_to'] and curr_node.value == node),
-            (Keyword, lambda curr_node, node: curr_node.arg in ['input_formats'] and len(curr_node.value.elts) == 1 and curr_node.value.elts[0] == node),
-            (Keyword, lambda curr_node, node: curr_node.arg in ['fields'] and node in curr_node.value.elts),
             # something() == 'string'
             (Compare, lambda curr_node, node: node == curr_node.ops[0][1]),
             # 'something' == blah()
             (Compare, lambda curr_node, node: node == curr_node.left),
 
-            # Try to exclude queryset.extra(something=[..., 'some sql',...]
-            (CallFunc, lambda curr_node, node: curr_node.func.attrname in ['extra'] and any(is_child_node(node, x) for x in curr_node.args)),
-
             # Queryset functions, queryset.order_by('shouldignore')
             (CallFunc, lambda curr_node, node: isinstance(curr_node.func, Getattr) and curr_node.func.attrname in ['has_key', 'pop', 'order_by', 'strftime', 'strptime', 'get', 'select_related', 'values', 'filter', 'values_list']),
-             # logging.info('shouldignore')
-            (CallFunc, lambda curr_node, node: curr_node.func.expr.name in ['logging']),
 
                 
             # hasattr(..., 'should ignore')
-            # HttpResponseRedirect('/some/url/shouldnt/care')
-            # first is function name, 2nd is the position the string must be in (none to mean don't care)
             (CallFunc, lambda curr_node, node: curr_node.func.name in ['hasattr', 'getattr'] and curr_node.args[1] == node),
-            (CallFunc, lambda curr_node, node: curr_node.func.name in ['HttpResponseRedirect', 'HttpResponse']),
-            (CallFunc, lambda curr_node, node: curr_node.func.name == 'set_cookie' and curr_node.args[0] == node),
-            (CallFunc, lambda curr_node, node: curr_node.func.name in ['ForeignKey', 'OneToOneField'] and curr_node.args[0] == node),
+            # getChild of CEGUI windows
+            (CallFunc, lambda curr_node, node: isinstance(curr_node.func, Getattr) and curr_node.func.attrname in ['getChild', ]),
         ]
 
         string_ok = False
