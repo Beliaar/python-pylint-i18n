@@ -51,7 +51,7 @@ class MissingGettextChecker(BaseChecker):
     """
     Checks for strings that aren't wrapped in a _ call somewhere
     """
-    
+
     __implements__ = IAstroidChecker
 
     name = 'missing_gettext'
@@ -62,7 +62,7 @@ class MissingGettextChecker(BaseChecker):
         }
 
     # this is important so that your checker is executed before others
-    priority = -1 
+    priority = -1
 
 
     def visit_const(self, node):
@@ -85,7 +85,7 @@ class MissingGettextChecker(BaseChecker):
             # URL, can't be translated
             lambda x: x.startswith("http://") or x.endswith(".html"),
             lambda x: x.startswith("https://") or x.endswith(".html"),
-            
+
             # probably a regular expression
             lambda x: x.startswith("^") and x.endswith("$"),
 
@@ -105,7 +105,7 @@ class MissingGettextChecker(BaseChecker):
         for func in whitelisted_strings:
             if func(node.value):
                 return
-        
+
 
         # Whitelist some strings based on the structure.
         # Each element of this list is a 2-tuple, class and then a 2 arg function.
@@ -133,18 +133,14 @@ class MissingGettextChecker(BaseChecker):
             # 'something' == blah()
             (Compare, lambda curr_node, node: node == curr_node.left),
 
-            # Queryset functions, queryset.order_by('shouldignore')
-            (CallFunc, lambda curr_node, node: isinstance(curr_node.func, Getattr) and curr_node.func.attrname in ['has_key', 'pop', 'order_by', 'strftime', 'strptime', 'get', 'select_related', 'values', 'filter', 'values_list']),
-
-                
             # hasattr(..., 'should ignore')
             (CallFunc, lambda curr_node, node: curr_node.func.name in ['hasattr', 'getattr'] and curr_node.args[1] == node),
-            # getChild of CEGUI windows
-            (CallFunc, lambda curr_node, node: isinstance(curr_node.func, Getattr) and curr_node.func.attrname in ['getChild', ]),
+            # CEGUI methods
+            (CallFunc, lambda curr_node, node: isinstance(curr_node.func, Getattr) and curr_node.func.attrname in ['getChild', 'loadLayoutFromFile']),
         ]
 
         string_ok = False
-        
+
         debug = False
         #debug = True
         curr_node = node
@@ -183,15 +179,15 @@ class MissingGettextChecker(BaseChecker):
             print(curr_node, curr_node.as_string())
             print(e)
             import pdb ; pdb.set_trace()
-        
+
         if not string_ok:
             # we've gotten to the top of the code tree / file level and we
             # haven't been whitelisted, so add an error here
             self.add_message('W9903', node=node, args=node.value)
 
-    
+
 def register(linter):
     """required method to auto register this checker"""
     linter.register_checker(MissingGettextChecker(linter))
-        
+
 
